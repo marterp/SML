@@ -42,7 +42,23 @@ class RetryTransferWorker @AssistedInject constructor(
 
             when (transfer.direction) {
                 "SENT" -> {
-                    Result.success()
+                    val files = transfer.fileName.split(",").map { File(applicationContext.cacheDir, it) }
+                        .filter { it.exists() }
+                    if (files.isEmpty()) {
+                        transferDao.updateStatus(transferId, "FAILED")
+                        return@doWork Result.failure()
+                    }
+                    val result = fileSender.sendFiles(files, sessionToken = transfer.sessionToken)
+                    result.fold(
+                        onSuccess = {
+                            transferDao.updateStatus(transferId, "COMPLETED")
+                            Result.success()
+                        },
+                        onFailure = { e ->
+                            Timber.e(e, "Retry failed for transfer $transferId")
+                            if (runAttemptCount < 3) Result.retry() else Result.failure()
+                        }
+                    )
                 }
                 "RECEIVED" -> {
                     val dir = File(applicationContext.cacheDir, "sml_received")

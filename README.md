@@ -1,211 +1,173 @@
-SML File Share 📲
+# SML File Share
 
-A peer-to-peer Android file sharing application that enables fast, offline file transfers between devices using WiFi Direct or hotspot connections.
+A peer-to-peer Android file sharing application for fast, offline file transfers between devices using WiFi Direct, hotspot connections, or QR codes.
 
----
-
-📌 Project Overview
-
-SML File Share is designed to transfer files directly between Android devices without requiring an internet connection.
-
-- Package Name: "com.mrp.sml"
-- Platform: Android
-- Language: Java
-- UI: XML Layouts
-
-The app uses local network communication (WiFi Direct or hotspot + TCP sockets) to achieve high-speed transfers similar to ShareIt.
+- **Package:** `com.mrp.sml`
+- **Platform:** Android (minSdk 26, targetSdk 36)
+- **Language:** Kotlin
+- **UI:** Jetpack Compose + Material 3
 
 ---
 
-🚀 Core Features
+## Features
 
-🔗 Device Connection
+### Device Discovery & Pairing
+- **WiFi Direct** — Discover and connect to nearby peers
+- **Google Nearby Connections** — Fallback discovery mechanism
+- **Hotspot + QR Code** — Receiver opens LocalOnlyHotspot, displays a QR code; sender scans it to connect
+- **QR Code Scanning** — CameraX + ZXing for real-time QR scanning
 
-- Discover nearby devices using WiFi Direct
-- Connect via hotspot or direct peer-to-peer
-- Manual IP connection fallback
+### File Transfer
+- Send and receive any file type (images, videos, documents, APKs, etc.)
+- Multiple file selection with system file picker
+- Real-time progress: percentage, speed (MB/s), ETA, file index
+- Pause, resume, and cancel in-flight transfers
+- **AES-256-GCM encryption** per chunk using a session-derived key
+- **SHA-256 verification** per file after transfer completes
+- Chunked streaming (configurable chunk size: 512KB–32MB)
+- Foreground service with persistent notification during transfers
 
-📁 File Transfer
+### Transfer History
+- Room database with transfer_history, paired_devices, and transfer_progress tables
+- Filter by All / Sent / Received / Failed
+- Transfer detail view (metadata, timestamps, file info)
+- Retry failed transfers with exponential backoff (up to 3 attempts)
+- Background cleanup of old records (30 days)
 
-- Send and receive:
-  - Images
-  - Videos
-  - Documents
-  - APK files
+### Settings
+- Device name configuration
+- Dark mode toggle (persisted, applies system-wide)
+- Theme color picker (6 preset colors)
+- Chunk size configuration
+- Save transfer history toggle
+- Save location picker
+- Network fallback (WiFi Direct → hotspot) toggle
+- Permission management
 
-- Real-time transfer information:
-  - Progress (%)
-  - Speed (MB/s)
-  - Status (sending, receiving, completed, failed)
-
-📂 File Manager
-
-- Browse device storage
-- Select single or multiple files
-- View file metadata
-
-🕓 Transfer History
-
-- Store transfer logs locally using Room Database
-- View previous transfers
-
----
-
-🛠 Tech Stack
-
-- Java
-- XML Layouts (ViewBinding/DataBinding)
-- MVVM Architecture
-- Room Database
-- RxJava / Executors for async
-- Hilt (Dependency Injection)
-- Gradle (Groovy DSL)
-
----
-
-🧱 Architecture
-
-This project follows Clean Architecture principles.
-
-Layers:
-
-**Presentation Layer**
-- XML-based Activities/Fragments
-- ViewModels
-- LiveData for UI state
-
-**Domain Layer**
-- Use cases (business logic)
-- Pure Java models
-
-**Data Layer**
-- Repository implementations
-- Room database
-- Network handling (WiFi Direct / sockets)
+### UI Screens
+| Screen | Description |
+|--------|-------------|
+| Splash | Gradient splash screen → home or permissions |
+| Permissions | Runtime permission requests (WiFi, location, notifications) |
+| Home | 4 action cards (Send, Receive, History, Settings), connection status, last transfer summary |
+| Send | File picker with validation (<5GB), file list with remove |
+| Receive | QR code display, hotspot toggle, discovered device list |
+| Discovery | Pairing role/method selection, peer list, QR display/scan |
+| Transfer | Animated progress bar, speed, ETA, pause/cancel/resume/retry |
+| Transfer Detail | Full transfer metadata and file info |
+| History | Filtered list grouped by date, retry/open/clear |
+| Settings | Device name, dark mode, theme, chunk size, save history, network fallback, permissions |
+| QR Scanner | CameraX-based real-time QR scanning |
+| QR Display | QR code with connection details card |
 
 ---
 
-📂 File Structure Map
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Language | Kotlin |
+| UI | Jetpack Compose + Material 3 |
+| Architecture | Clean Architecture (presentation/domain/data) |
+| DI | Dagger Hilt |
+| Database | Room (3 tables, 3 DAOs) |
+| Preferences | DataStore (Preferences) |
+| Navigation | Jetpack Compose Navigation |
+| Networking | TCP sockets (ServerSocket/Socket), WiFi P2P API |
+| Discovery | WiFi Direct, Google Nearby Connections, QR codes (ZXing) |
+| Camera | CameraX (Camera2, Lifecycle, View) |
+| Async | Kotlin Coroutines + StateFlow |
+| Background | WorkManager, Foreground Service |
+| Encryption | AES-256-GCM (per-chunk) |
+| Integrity | SHA-256 (per-file) |
+| Build | Gradle (Kotlin DSL + Version Catalog) |
+
+---
+
+## Architecture
 
 ```
-SML File Share Project Structure (/workspaces/SML)
-├── app/
-│   ├── build.gradle (Groovy)
-│   ├── src/main/
-│   │   ├── AndroidManifest.xml
-│   │   ├── kotlin/ → java/ (com/mrp/sml/)
-│   │   │   ├── MainActivity.java
-│   │   │   ├── SmlApplication.java
-│   │   │   └── ui/ (Activities/Fragments/ViewModels)
-│   │   └── res/ (XML layouts, drawables, values)
-│   └── build/ (outputs)
-├── core/ (common utils)
-│   ├── build.gradle
-│   └── src/main/java/
-├── data/ (repositories, Room)
-│   ├── build.gradle
-│   └── src/main/java/
-├── domain/ (use cases, models)
-│   ├── build.gradle
-│   └── src/main/java/
-├── gradle/
-│   └── libs.versions.toml
-├── build.gradle (root, Groovy)
-├── settings.gradle
-├── gradle.properties
-├── AGENTS.md, README.md, etc.
-└── gradlew / gradlew.bat
+app/src/main/java/com/mrp/sml/
+├── core/               # Constants, models, extensions, utils
+│   ├── constants/      # AppConstants, NetworkConstants, TransferConstants
+│   ├── models/         # ConnectionState, Device, TransferFile, TransferProgress, TransferSession
+│   ├── extensions/     # ContextExt, FlowExt
+│   ├── permissions/    # PermissionManager
+│   └── utils/          # FileUtils, QrCodeUtils, WifiUtils, TransferUtils, etc.
+├── data/
+│   ├── local/          # Room DB, DAOs, entities, DataStore
+│   ├── remote/         # WiFi Direct, Nearby, Hotspot, TCP sockets
+│   ├── repository/     # TransferRepositoryImpl, DeviceRepositoryImpl, ConnectionRepositoryImpl
+│   └── mapper/         # DeviceMapper, TransferMapper
+├── di/                 # Hilt modules (App, Database, Dispatcher, Network, Repository)
+├── domain/
+│   ├── model/          # DeviceModel, TransferModel
+│   ├── repository/     # Interfaces
+│   └── usecase/        # discovery/, transfer/, settings/
+├── receivers/          # BootReceiver, WifiStateReceiver
+├── services/           # DiscoveryService, TransferForegroundService, NotificationService
+├── ui/
+│   ├── components/     # DeviceCard, FileItem, SMLTopBar, TransferProgressCard
+│   ├── navigation/     # Screens (sealed class), NavGraph
+│   ├── screens/        # 12 screens (splash, home, send, receive, discovery, transfer, etc.)
+│   ├── theme/          # Color, Theme, Typography (Material 3)
+│   └── viewmodel/      # 9 ViewModels
+└── workers/            # CleanupWorker, RetryTransferWorker
 ```
 
-(Note: feature modules like feature_connection/ to be added later)
+---
+
+## Networking
+
+### Discovery Priority
+1. **WiFi Direct** — `WifiP2pManager.discoverPeers()` + `requestPeers()`
+2. **Google Nearby** — `ConnectionsClient` advertising/discovery
+3. **QR Code** — Encoded JSON payload with device info + hotspot credentials
+4. **Hotspot** — `LocalOnlyHotspot` (API 26+) / `WifiNetworkSpecifier` (API 29+)
+
+### Transfer Protocol
+1. Handshake: metadata JSON → accept/reject
+2. Per-file: FILE_START → CHUNKs (encrypted) → FILE_DONE
+3. Completion: byte `8` signals all files received
+4. Encryption: AES-256-GCM, key = SHA-256(session token), 12-byte nonce per chunk
+5. Verification: SHA-256 hash compared after each file
 
 ---
 
-🌐 Networking Strategy
+## Build & Run
 
-**Primary Method**
-- WiFi Direct (Peer-to-Peer)
+```bash
+# Build all modules
+./gradlew assembleDebug
 
-**Fallback Method**
-- Hotspot + TCP socket communication
+# Run tests
+./gradlew test
 
-**Requirements**
-- Supports large file transfers (>1GB)
-- Uses buffered streams
-- Handles connection failures and retries
+# Lint
+./gradlew lint
 
----
+# Clean build
+./gradlew clean assembleDebug
+```
 
-🎨 UI Design
-
-- Material Design with XML layouts
-- Dark mode support (themes.xml)
-- Responsive layouts
-
-**Main Screens**
-- Home (Send / Receive)
-- Device Discovery
-- File Picker
-- Transfer Progress
-- Transfer History
+Requires Android Studio Hedgehog (2023.1.1+) or newer with JDK 17.
 
 ---
 
-🔐 Permissions Required
+## Permissions
 
-- Nearby devices / WiFi access
-- Storage access
-- Location (required for WiFi Direct)
-
----
-
-⚙️ Build & Run
-
-Follow instructions in:
-
-👉 "BUILD.md"
+| Permission | Purpose |
+|-----------|---------|
+| `ACCESS_FINE_LOCATION` | WiFi Direct peer discovery |
+| `NEARBY_WIFI_DEVICES` (API 33+) | WiFi Direct (replacement for location) |
+| `POST_NOTIFICATIONS` (API 33+) | Foreground transfer notification |
+| `INTERNET` | Local socket communication |
+| `ACCESS_WIFI_STATE` / `CHANGE_WIFI_STATE` | WiFi/hotspot management |
+| `FOREGROUND_SERVICE` | Transfer foreground service |
+| `RECEIVE_BOOT_COMPLETED` | Schedule background cleanup |
 
 ---
 
-📋 Development Workflow
-
-Codex and contributors must follow:
-
-1. "AGENTS.md" → Rules and architecture
-2. "TODO.md" → Task execution order
-3. "CONSTRAINTS.md" → Implementation guardrails
-4. "BUILD.md" → Build and validation process
-
-SDK Configuration Source of Truth: `BUILD.md` (minSdk 24, targetSdk 35, compileSdk 35)
-
----
-
-✅ Definition of Done
-
-- Devices connect successfully
-- Files transfer without errors
-- Progress updates in real-time
-- Transfer history is stored and retrievable
-- App handles large files reliably
-- No crashes during operation
-
----
-
-🔮 Future Improvements
-
-- QR code-based connection
-- Internet-based transfer
-- Cross-platform support
-- End-to-end encryption
-
----
-
-📄 License
-
-This project is intended for educational and development purposes.
-
----
-
-👨‍💻 Author
+## Author
 
 Developed by MRP

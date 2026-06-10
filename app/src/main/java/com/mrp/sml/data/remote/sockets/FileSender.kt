@@ -68,8 +68,8 @@ class FileSender @Inject constructor(
                 Timber.i("FileSender: receiver connected from ${socket.inetAddress.hostAddress}")
             }
 
-            val output = DataOutputStream(BufferedOutputStream(socket.getOutputStream()))
-            val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
+            val output = DataOutputStream(BufferedOutputStream(socket.getOutputStream(), TransferConstants.BUFFER_SIZE))
+            val input = DataInputStream(BufferedInputStream(socket.getInputStream(), TransferConstants.BUFFER_SIZE))
 
             val totalBytes = files.sumOf { it.length() }
             val metadata = FileMetadataJson(

@@ -229,8 +229,9 @@ class WifiDirectManager @Inject constructor(
 
                 WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                     val group = intent.getParcelableExtra<WifiP2pGroup>(WifiP2pManager.EXTRA_WIFI_P2P_GROUP)
+                    val p2pInfo = intent.getParcelableExtra<android.net.wifi.p2p.WifiP2pInfo>(WifiP2pManager.EXTRA_WIFI_P2P_INFO)
                     if (group != null) {
-                        val ownerIp = group.owner.address.hostAddress
+                        val ownerIp = p2pInfo?.groupOwnerAddress?.hostAddress ?: group.owner.deviceAddress
                         _groupOwnerIp.value = ownerIp
                         Timber.i("WiFi Direct group formed, owner IP: $ownerIp, isGroupOwner: ${group.isGroupOwner}")
                         if (group.isGroupOwner) {

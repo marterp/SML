@@ -1,5 +1,6 @@
 package com.mrp.sml.data.remote.hotspot
 
+import android.annotation.SuppressLint
 import android.content.Context
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -45,6 +46,7 @@ class HotspotManager @Inject constructor(
     private val connectivityManager: ConnectivityManager?
         get() = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
 
+    @SuppressLint("MissingPermission")
     suspend fun startHotspot(): Result<HotspotInfo> = suspendCancellableCoroutine { continuation ->
         val manager = wifiManager
         if (manager == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {

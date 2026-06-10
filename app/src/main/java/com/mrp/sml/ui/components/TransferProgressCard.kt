@@ -25,7 +25,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mrp.sml.core.models.TransferProgress
 import com.mrp.sml.core.utils.TransferUtils
-import com.mrp.sml.ui.theme.Error
 
 @Composable
 fun TransferProgressCard(
@@ -68,7 +67,7 @@ fun TransferProgressCard(
                 progress = { if (progress.isIndeterminate) 0f else animatedProgress },
                 modifier = Modifier.fillMaxWidth(),
                 color = when {
-                    isFailed -> Error
+                    isFailed -> MaterialTheme.colorScheme.error
                     isComplete -> MaterialTheme.colorScheme.primary
                     else -> MaterialTheme.colorScheme.primary
                 },
@@ -87,7 +86,7 @@ fun TransferProgressCard(
                     else "%.1f%%".format(progress.progressPercent),
                     style = MaterialTheme.typography.bodySmall,
                     color = when {
-                        isFailed -> Error
+                        isFailed -> MaterialTheme.colorScheme.error
                         isComplete -> MaterialTheme.colorScheme.primary
                         else -> MaterialTheme.colorScheme.onSurface
                     },

@@ -1,5 +1,6 @@
 package com.mrp.sml.data.remote.hotspot;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import dagger.hilt.EntryPoint;
 import dagger.hilt.InstallIn;

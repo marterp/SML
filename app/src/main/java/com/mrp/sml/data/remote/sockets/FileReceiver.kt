@@ -27,12 +27,17 @@ class FileReceiver @Inject constructor(
 ) {
 
     private var socket: Socket? = null
+    private var serverSocket: ServerSocket? = null
     private var cancelled = false
 
     private val _progress = MutableStateFlow(TransferProgress())
     val progress: StateFlow<TransferProgress> = _progress.asStateFlow()
 
-    fun cancel() { cancelled = true }
+    fun cancel() {
+        cancelled = true
+        try { serverSocket?.close() } catch (_: Exception) {}
+        try { socket?.close() } catch (_: Exception) {}
+    }
 
     suspend fun receiveFiles(
         outputDirectory: File,
@@ -40,6 +45,7 @@ class FileReceiver @Inject constructor(
         sessionToken: String = ""
     ): Result<List<File>> = withContext(Dispatchers.IO) {
         cancelled = false
+        transferManager.reset()
         try {
             socket = Socket().apply {
                 connect(InetSocketAddress(senderAddress, TransferConstants.TRANSFER_PORT), 10000)
@@ -65,10 +71,11 @@ class FileReceiver @Inject constructor(
         sessionToken: String = ""
     ): Result<List<File>> = withContext(Dispatchers.IO) {
         cancelled = false
-        val serverSocket = ServerSocket(TransferConstants.TRANSFER_PORT).apply { reuseAddress = true }
+        transferManager.reset()
+        serverSocket = ServerSocket(TransferConstants.TRANSFER_PORT).apply { reuseAddress = true }
         try {
             Timber.i("FileReceiver: listening for sender on port ${TransferConstants.TRANSFER_PORT}")
-            socket = serverSocket.accept().apply {
+            socket = serverSocket!!.accept().apply {
                 soTimeout = TransferConstants.SOCKET_TIMEOUT_MS
                 tcpNoDelay = true
                 setReceiveBufferSize(TransferConstants.BUFFER_SIZE)
@@ -81,7 +88,8 @@ class FileReceiver @Inject constructor(
             if (!cancelled) Timber.e(e, "FileReceiver failed")
             Result.failure(e)
         } finally {
-            try { serverSocket.close() } catch (_: Exception) {}
+            try { serverSocket?.close() } catch (_: Exception) {}
+            serverSocket = null
             try { socket?.close() } catch (_: Exception) {}
             socket = null
         }
@@ -92,8 +100,8 @@ class FileReceiver @Inject constructor(
         outputDirectory: File,
         sessionToken: String
     ): Result<List<File>> {
-        val input = DataInputStream(BufferedInputStream(socket.getInputStream()))
-        val output = DataOutputStream(BufferedOutputStream(socket.getOutputStream()))
+        val input = DataInputStream(BufferedInputStream(socket.getInputStream(), TransferConstants.BUFFER_SIZE))
+        val output = DataOutputStream(BufferedOutputStream(socket.getOutputStream(), TransferConstants.BUFFER_SIZE))
 
         val msgType = input.readByte()
         if (msgType != 1.toByte()) throw Exception("Expected metadata, got $msgType")

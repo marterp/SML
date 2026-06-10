@@ -20,7 +20,8 @@ class SendFileUseCaseTest {
             override suspend fun deleteTransfer(id: String) {}
             override suspend fun clearHistory() {}
             override fun sendFiles(filePaths: List<String>, destinationAddress: String, sessionToken: String) {}
-            override fun receiveFiles(outputDirectoryPath: String, sessionToken: String) {}
+            override fun receiveFiles(outputDirectoryPath: String, sessionToken: String, senderIp: String) {}
+            override fun listenForFiles(outputDirectoryPath: String, sessionToken: String) {}
             override fun cancelTransfer() {}
             override fun pauseTransfer() {}
             override fun resumeTransfer() {}

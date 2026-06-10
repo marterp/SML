@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,12 +38,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.mrp.sml.ui.theme.Background
 import com.mrp.sml.ui.theme.GradientEnd
 import com.mrp.sml.ui.theme.GradientStart
 import com.mrp.sml.ui.theme.OnPrimary
-import com.mrp.sml.ui.theme.Primary
-import com.mrp.sml.ui.theme.Secondary
 import com.mrp.sml.ui.theme.StateConnected
 import com.mrp.sml.ui.theme.StateDisconnected
 import com.mrp.sml.ui.theme.StateFailed
@@ -58,7 +57,8 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Background)
+            .systemBarsPadding()
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
     ) {
         Box(
@@ -74,6 +74,16 @@ fun HomeScreen(
                 .padding(horizontal = 24.dp, vertical = 24.dp),
             contentAlignment = Alignment.BottomStart
         ) {
+            IconButton(
+                onClick = onSettingsClick,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = "Settings",
+                    tint = OnPrimary
+                )
+            }
             Column {
                 Text(
                     text = "SML File Share",
@@ -111,14 +121,14 @@ fun HomeScreen(
             ActionCard(
                 title = "Send Files",
                 icon = Icons.Default.Share,
-                backgroundColor = Primary,
+                backgroundColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.weight(1f),
                 onClick = onSendClick
             )
             ActionCard(
                 title = "Receive Files",
                 icon = Icons.Default.CheckCircle,
-                backgroundColor = Secondary,
+                backgroundColor = MaterialTheme.colorScheme.secondary,
                 modifier = Modifier.weight(1f),
                 onClick = onReceiveClick
             )
@@ -126,28 +136,15 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
+        ActionCard(
+            title = "History",
+            icon = Icons.Default.History,
+            backgroundColor = MaterialTheme.colorScheme.tertiary,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ActionCard(
-                title = "History",
-                icon = Icons.Default.History,
-                backgroundColor = MaterialTheme.colorScheme.tertiary,
-                modifier = Modifier.weight(1f),
-                onClick = onHistoryClick
-            )
-            ActionCard(
-                title = "Settings",
-                icon = Icons.Default.Settings,
-                backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                textColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-                onClick = onSettingsClick
-            )
-        }
+            onClick = onHistoryClick
+        )
 
         if (uiState.lastTransferSummary.isNotBlank()) {
             Spacer(modifier = Modifier.height(20.dp))
@@ -173,7 +170,7 @@ fun HomeScreen(
                     Icon(
                         Icons.Default.Share,
                         contentDescription = "Last transfer",
-                        tint = Primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -189,6 +186,18 @@ fun HomeScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Version ${com.mrp.sml.BuildConfig.VERSION_NAME}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

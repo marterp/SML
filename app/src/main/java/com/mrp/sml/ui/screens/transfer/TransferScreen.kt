@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,6 +38,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,8 +50,6 @@ import com.mrp.sml.core.models.TransferStatus
 import com.mrp.sml.core.utils.FileUtils
 import com.mrp.sml.core.utils.TransferUtils
 import com.mrp.sml.ui.components.SMLTopBar
-import com.mrp.sml.ui.theme.Error
-import com.mrp.sml.ui.theme.Primary
 import com.mrp.sml.ui.theme.StateConnected
 import com.mrp.sml.ui.theme.StateConnecting
 import com.mrp.sml.ui.viewmodel.TransferUiState
@@ -71,6 +73,40 @@ fun TransferScreen(
         label = "progress"
     )
 
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    val isTransferActive = uiState.status == TransferStatus.TRANSFERRING ||
+        uiState.status == TransferStatus.PAUSED ||
+        uiState.status == TransferStatus.RESUMING ||
+        uiState.status == TransferStatus.PENDING ||
+        uiState.status == TransferStatus.DISCOVERING ||
+        uiState.status == TransferStatus.CONNECTING ||
+        uiState.status == TransferStatus.VERIFYING
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Cancel Transfer?") },
+            text = {
+                Text("Leaving this screen will cancel the active transfer.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showExitDialog = false
+                    onCancel()
+                    onBack()
+                }) {
+                    Text("Yes, Cancel")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showExitDialog = false }) {
+                    Text("Stay")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             SMLTopBar(
@@ -85,7 +121,10 @@ fun TransferScreen(
                     else -> "Preparing"
                 },
                 showBackButton = true,
-                onBackClick = onBack
+                onBackClick = {
+                    if (isTransferActive) showExitDialog = true
+                    else onBack()
+                }
             )
         }
     ) { padding ->
@@ -194,7 +233,7 @@ private fun FailedState(
     onBackToHome: () -> Unit,
     onViewDetails: () -> Unit
 ) {
-    Icon(imageVector = Icons.Default.Error, contentDescription = "Transfer failed", tint = Error, modifier = Modifier.size(80.dp))
+    Icon(imageVector = Icons.Default.Error, contentDescription = "Transfer failed", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(80.dp))
     Spacer(modifier = Modifier.height(16.dp))
     Text(
         text = if (status == TransferStatus.CANCELLED) "Transfer Cancelled" else "Transfer Failed",
@@ -233,7 +272,7 @@ private fun PausedState(
     onResume: () -> Unit,
     onCancel: () -> Unit
 ) {
-    Icon(imageVector = Icons.Default.Pause, contentDescription = "Transfer paused", tint = Primary, modifier = Modifier.size(80.dp))
+    Icon(imageVector = Icons.Default.Pause, contentDescription = "Transfer paused", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
     Spacer(modifier = Modifier.height(16.dp))
     Text("Transfer Paused", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
     Spacer(modifier = Modifier.height(8.dp))
@@ -249,14 +288,14 @@ private fun PausedState(
         Icon(Icons.Default.PlayArrow, contentDescription = "Resume transfer"); Spacer(modifier = Modifier.width(8.dp)); Text("Resume")
     }
     Spacer(modifier = Modifier.height(8.dp))
-    OutlinedButton(onClick = onCancel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = Error)) {
+    OutlinedButton(onClick = onCancel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
         Icon(Icons.Default.Close, contentDescription = "Cancel transfer"); Spacer(modifier = Modifier.width(6.dp)); Text("Cancel Transfer")
     }
 }
 
 @Composable
 private fun VerifyingState() {
-    Icon(imageVector = Icons.Default.VerifiedUser, contentDescription = "Verifying file integrity", tint = Primary, modifier = Modifier.size(80.dp))
+    Icon(imageVector = Icons.Default.VerifiedUser, contentDescription = "Verifying file integrity", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(80.dp))
     Spacer(modifier = Modifier.height(16.dp))
     Text("Verifying Integrity", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
     Spacer(modifier = Modifier.height(12.dp))
@@ -285,8 +324,8 @@ private fun ReconnectingState(
     Spacer(modifier = Modifier.height(4.dp))
     Text("Attempt $attempt", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Spacer(modifier = Modifier.height(32.dp))
-    OutlinedButton(onClick = onCancel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = Error)) {
-        Icon(Icons.Default.Close, contentDescription = null); Spacer(modifier = Modifier.width(6.dp)); Text("Cancel")
+    OutlinedButton(onClick = onCancel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+        Icon(Icons.Default.Close, contentDescription = "Cancel reconnecting"); Spacer(modifier = Modifier.width(6.dp)); Text("Cancel")
     }
 }
 
@@ -328,7 +367,7 @@ private fun ActiveTransferState(
     LinearProgressIndicator(
         progress = { animatedProgress },
         modifier = Modifier.fillMaxWidth().height(8.dp),
-        color = Primary, trackColor = MaterialTheme.colorScheme.surfaceVariant
+        color = MaterialTheme.colorScheme.primary, trackColor = MaterialTheme.colorScheme.surfaceVariant
     )
     Spacer(modifier = Modifier.height(12.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -361,7 +400,7 @@ private fun ActiveTransferState(
         OutlinedButton(onClick = onPause, modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp), enabled = canPause) {
             Icon(Icons.Default.Pause, contentDescription = "Pause transfer"); Spacer(modifier = Modifier.width(6.dp)); Text("Pause")
         }
-        Button(onClick = onCancel, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = Error), shape = RoundedCornerShape(16.dp)) {
+        Button(onClick = onCancel, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error), shape = RoundedCornerShape(16.dp)) {
             Icon(Icons.Default.Close, contentDescription = "Cancel transfer"); Spacer(modifier = Modifier.width(6.dp)); Text("Cancel")
         }
     }

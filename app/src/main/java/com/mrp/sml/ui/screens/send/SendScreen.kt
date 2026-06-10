@@ -42,9 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.mrp.sml.core.models.TransferFile
 import com.mrp.sml.core.utils.FileUtils
 import com.mrp.sml.ui.components.SMLTopBar
-import com.mrp.sml.ui.theme.Error
 import com.mrp.sml.ui.theme.OnWarningContainer
-import com.mrp.sml.ui.theme.Primary
 import com.mrp.sml.ui.theme.Warning
 import com.mrp.sml.ui.theme.WarningContainer
 import com.mrp.sml.ui.viewmodel.SendUiState
@@ -155,7 +153,7 @@ fun SendScreen(
                     Text(
                         text = error,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Error
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
 
@@ -244,7 +242,7 @@ private fun FileItemRow(
             Icon(
                 imageVector = fileIcon,
                 contentDescription = "${file.name} file type icon",
-                tint = Primary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))

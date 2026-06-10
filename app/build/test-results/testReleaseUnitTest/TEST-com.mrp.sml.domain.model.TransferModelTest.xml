@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mrp.sml.domain.model.TransferModelTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-06-10T08:28:13" hostname="codespaces-b1dea3" time="0.015">
+  <properties/>
+  <testcase name="completedAt_setOnCompletion" classname="com.mrp.sml.domain.model.TransferModelTest" time="0.001"/>
+  <testcase name="transferStatus_enumValues" classname="com.mrp.sml.domain.model.TransferModelTest" time="0.013"/>
+  <testcase name="transferDirection_enumValues" classname="com.mrp.sml.domain.model.TransferModelTest" time="0.001"/>
+  <testcase name="createTransferModel_defaultValues" classname="com.mrp.sml.domain.model.TransferModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

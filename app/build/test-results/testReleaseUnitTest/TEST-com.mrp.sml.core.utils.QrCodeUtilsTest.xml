@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.mrp.sml.core.utils.QrCodeUtilsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-06-10T08:28:13" hostname="codespaces-b1dea3" time="0.06">
+  <properties/>
+  <testcase name="buildQrPayload_containsDeviceInfo" classname="com.mrp.sml.core.utils.QrCodeUtilsTest" time="0.053"/>
+  <testcase name="buildQrPayload_emptyDeviceName" classname="com.mrp.sml.core.utils.QrCodeUtilsTest" time="0.006"/>
+  <testcase name="buildQrPayload_withPort" classname="com.mrp.sml.core.utils.QrCodeUtilsTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

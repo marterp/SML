@@ -5,7 +5,9 @@ import android.content.Intent
 import android.os.IBinder
 import com.mrp.sml.data.remote.discovery.DeviceDiscoveryManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -16,17 +18,22 @@ class DiscoveryService : Service() {
     @Inject
     lateinit var discoveryManager: DeviceDiscoveryManager
 
+    private var scope: CoroutineScope? = null
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Timber.i("DiscoveryService started")
 
         when (intent?.action) {
             ACTION_START -> {
-                kotlinx.coroutines.MainScope().launch {
+                scope?.cancel()
+                scope = MainScope()
+                scope!!.launch {
                     discoveryManager.startDiscovery()
                 }
             }
             ACTION_STOP -> {
-                kotlinx.coroutines.MainScope().launch {
+                scope?.cancel()
+                scope?.launch {
                     discoveryManager.stopDiscovery()
                 }
                 stopSelf()
@@ -39,6 +46,7 @@ class DiscoveryService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        scope?.cancel()
         discoveryManager.cleanup()
         super.onDestroy()
     }

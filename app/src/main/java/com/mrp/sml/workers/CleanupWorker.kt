@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.mrp.sml.data.local.db.dao.TransferDao
+import kotlinx.coroutines.flow.first
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import timber.log.Timber
@@ -20,11 +21,7 @@ class CleanupWorker @AssistedInject constructor(
         Timber.i("CleanupWorker: removing old transfer records and cache files")
 
         return try {
-            val transfers = transferDao.getTransferHistory().let { flow ->
-                var list: List<com.mrp.sml.data.local.db.entities.TransferEntity> = emptyList()
-                flow.collect { list = it; return@collect }
-                list
-            }
+            val transfers = transferDao.getTransferHistory().first()
 
             val cutoffTime = System.currentTimeMillis() - (30L * 24 * 60 * 60 * 1000)
             transfers

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,7 +50,6 @@ import androidx.core.content.PermissionChecker
 import com.mrp.sml.ui.theme.GradientEnd
 import com.mrp.sml.ui.theme.GradientStart
 import com.mrp.sml.ui.theme.OnPrimary
-import com.mrp.sml.ui.theme.Primary
 import com.mrp.sml.ui.theme.StateConnected
 
 @Composable
@@ -59,6 +59,11 @@ fun PermissionScreen(
 ) {
     val context = LocalContext.current
 
+    var cameraGranted by remember {
+        mutableStateOf(
+            PermissionChecker.checkSelfPermission(context, Manifest.permission.CAMERA) == PermissionChecker.PERMISSION_GRANTED
+        )
+    }
     var nearbyGranted by remember {
         mutableStateOf(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -87,8 +92,13 @@ fun PermissionScreen(
         )
     }
 
-    val allGranted = nearbyGranted && locationGranted && notificationGranted
+    val allGranted = cameraGranted && nearbyGranted && locationGranted && notificationGranted
 
+    val cameraLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        cameraGranted = granted
+    }
     val nearbyLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -108,6 +118,7 @@ fun PermissionScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .systemBarsPadding()
             .verticalScroll(rememberScrollState())
     ) {
         Box(
@@ -183,6 +194,16 @@ fun PermissionScreen(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
+            }
+        )
+
+        PermissionItem(
+            icon = Icons.Default.Security,
+            title = "Camera for QR scanning",
+            description = "Required to scan QR codes from other devices to establish connections",
+            granted = cameraGranted,
+            onRequest = {
+                cameraLauncher.launch(Manifest.permission.CAMERA)
             }
         )
 
@@ -262,7 +283,7 @@ private fun PermissionItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (granted) StateConnected else Primary,
+                tint = if (granted) StateConnected else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))

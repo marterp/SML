@@ -8,12 +8,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 import kotlinx.coroutines.flow.StateFlow;
 import javax.inject.Inject;
 
-@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00000\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010 \n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\f\n\u0002\u0010\u000b\n\u0002\b\u0002\n\u0002\u0010\b\n\u0000\n\u0002\u0010\u000e\n\u0000\b\u0087\b\u0018\u00002\u00020\u0001B/\u0012\u000e\b\u0002\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u0012\b\b\u0002\u0010\u0005\u001a\u00020\u0006\u0012\u000e\b\u0002\u0010\u0007\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u00a2\u0006\u0002\u0010\bJ\u000f\u0010\u000e\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003H\u00c6\u0003J\t\u0010\u000f\u001a\u00020\u0006H\u00c6\u0003J\u000f\u0010\u0010\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003H\u00c6\u0003J3\u0010\u0011\u001a\u00020\u00002\u000e\b\u0002\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u00032\b\b\u0002\u0010\u0005\u001a\u00020\u00062\u000e\b\u0002\u0010\u0007\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003H\u00c6\u0001J\u0013\u0010\u0012\u001a\u00020\u00132\b\u0010\u0014\u001a\u0004\u0018\u00010\u0001H\u00d6\u0003J\t\u0010\u0015\u001a\u00020\u0016H\u00d6\u0001J\t\u0010\u0017\u001a\u00020\u0018H\u00d6\u0001R\u0017\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\t\u0010\nR\u0011\u0010\u0005\u001a\u00020\u0006\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000b\u0010\fR\u0017\u0010\u0007\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\r\u0010\n\u00a8\u0006\u0019"}, d2 = {"Lcom/mrp/sml/ui/viewmodel/HistoryUiState;", "", "allTransfers", "", "Lcom/mrp/sml/domain/model/TransferModel;", "filter", "Lcom/mrp/sml/ui/screens/history/HistoryFilter;", "filteredTransfers", "(Ljava/util/List;Lcom/mrp/sml/ui/screens/history/HistoryFilter;Ljava/util/List;)V", "getAllTransfers", "()Ljava/util/List;", "getFilter", "()Lcom/mrp/sml/ui/screens/history/HistoryFilter;", "getFilteredTransfers", "component1", "component2", "component3", "copy", "equals", "", "other", "hashCode", "", "toString", "", "app_debug"})
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u00002\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010 \n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0010\u000e\n\u0002\b\u000f\n\u0002\u0010\u000b\n\u0002\b\u0002\n\u0002\u0010\b\n\u0002\b\u0002\b\u0087\b\u0018\u00002\u00020\u0001B9\u0012\u000e\b\u0002\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u0012\b\b\u0002\u0010\u0005\u001a\u00020\u0006\u0012\b\b\u0002\u0010\u0007\u001a\u00020\b\u0012\u000e\b\u0002\u0010\t\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u00a2\u0006\u0002\u0010\nJ\u000f\u0010\u0012\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003H\u00c6\u0003J\t\u0010\u0013\u001a\u00020\u0006H\u00c6\u0003J\t\u0010\u0014\u001a\u00020\bH\u00c6\u0003J\u000f\u0010\u0015\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003H\u00c6\u0003J=\u0010\u0016\u001a\u00020\u00002\u000e\b\u0002\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u00032\b\b\u0002\u0010\u0005\u001a\u00020\u00062\b\b\u0002\u0010\u0007\u001a\u00020\b2\u000e\b\u0002\u0010\t\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003H\u00c6\u0001J\u0013\u0010\u0017\u001a\u00020\u00182\b\u0010\u0019\u001a\u0004\u0018\u00010\u0001H\u00d6\u0003J\t\u0010\u001a\u001a\u00020\u001bH\u00d6\u0001J\t\u0010\u001c\u001a\u00020\bH\u00d6\u0001R\u0017\u0010\u0002\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000b\u0010\fR\u0011\u0010\u0005\u001a\u00020\u0006\u00a2\u0006\b\n\u0000\u001a\u0004\b\r\u0010\u000eR\u0017\u0010\t\u001a\b\u0012\u0004\u0012\u00020\u00040\u0003\u00a2\u0006\b\n\u0000\u001a\u0004\b\u000f\u0010\fR\u0011\u0010\u0007\u001a\u00020\b\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0010\u0010\u0011\u00a8\u0006\u001d"}, d2 = {"Lcom/mrp/sml/ui/viewmodel/HistoryUiState;", "", "allTransfers", "", "Lcom/mrp/sml/domain/model/TransferModel;", "filter", "Lcom/mrp/sml/ui/screens/history/HistoryFilter;", "searchQuery", "", "filteredTransfers", "(Ljava/util/List;Lcom/mrp/sml/ui/screens/history/HistoryFilter;Ljava/lang/String;Ljava/util/List;)V", "getAllTransfers", "()Ljava/util/List;", "getFilter", "()Lcom/mrp/sml/ui/screens/history/HistoryFilter;", "getFilteredTransfers", "getSearchQuery", "()Ljava/lang/String;", "component1", "component2", "component3", "component4", "copy", "equals", "", "other", "hashCode", "", "toString", "app_debug"})
 public final class HistoryUiState {
     @org.jetbrains.annotations.NotNull()
     private final java.util.List<com.mrp.sml.domain.model.TransferModel> allTransfers = null;
     @org.jetbrains.annotations.NotNull()
     private final com.mrp.sml.ui.screens.history.HistoryFilter filter = null;
+    @org.jetbrains.annotations.NotNull()
+    private final java.lang.String searchQuery = null;
     @org.jetbrains.annotations.NotNull()
     private final java.util.List<com.mrp.sml.domain.model.TransferModel> filteredTransfers = null;
     
@@ -28,7 +30,12 @@ public final class HistoryUiState {
     }
     
     @org.jetbrains.annotations.NotNull()
-    public final java.util.List<com.mrp.sml.domain.model.TransferModel> component3() {
+    public final java.lang.String component3() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.util.List<com.mrp.sml.domain.model.TransferModel> component4() {
         return null;
     }
     
@@ -36,6 +43,7 @@ public final class HistoryUiState {
     public final com.mrp.sml.ui.viewmodel.HistoryUiState copy(@org.jetbrains.annotations.NotNull()
     java.util.List<com.mrp.sml.domain.model.TransferModel> allTransfers, @org.jetbrains.annotations.NotNull()
     com.mrp.sml.ui.screens.history.HistoryFilter filter, @org.jetbrains.annotations.NotNull()
+    java.lang.String searchQuery, @org.jetbrains.annotations.NotNull()
     java.util.List<com.mrp.sml.domain.model.TransferModel> filteredTransfers) {
         return null;
     }
@@ -60,6 +68,7 @@ public final class HistoryUiState {
     public HistoryUiState(@org.jetbrains.annotations.NotNull()
     java.util.List<com.mrp.sml.domain.model.TransferModel> allTransfers, @org.jetbrains.annotations.NotNull()
     com.mrp.sml.ui.screens.history.HistoryFilter filter, @org.jetbrains.annotations.NotNull()
+    java.lang.String searchQuery, @org.jetbrains.annotations.NotNull()
     java.util.List<com.mrp.sml.domain.model.TransferModel> filteredTransfers) {
         super();
     }
@@ -71,6 +80,11 @@ public final class HistoryUiState {
     
     @org.jetbrains.annotations.NotNull()
     public final com.mrp.sml.ui.screens.history.HistoryFilter getFilter() {
+        return null;
+    }
+    
+    @org.jetbrains.annotations.NotNull()
+    public final java.lang.String getSearchQuery() {
         return null;
     }
     

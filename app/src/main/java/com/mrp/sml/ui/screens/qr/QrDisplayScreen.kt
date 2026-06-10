@@ -1,5 +1,8 @@
 package com.mrp.sml.ui.screens.qr
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -7,13 +10,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Copy
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -23,7 +27,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,6 +50,7 @@ fun QrDisplayScreen(
     onBack: () -> Unit = {},
     onCopyPayload: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
     val qrBitmap = remember(qrPayload) {
         QrCodeUtils.generateQrCode(qrPayload)
     }
@@ -104,7 +109,7 @@ fun QrDisplayScreen(
                     
                     parsedPayload?.let { payload ->
                         Spacer(modifier = Modifier.height(24.dp))
-                        ConnectionInfoCard(payload = payload, onCopy = onCopyPayload)
+                        ConnectionInfoCard(context = context, payload = payload, onCopy = onCopyPayload)
                     }
                 }
             }
@@ -123,6 +128,7 @@ fun QrDisplayScreen(
 
 @Composable
 private fun ConnectionInfoCard(
+    context: Context,
     payload: QrCodeUtils.QrPayload,
     onCopy: (String) -> Unit
 ) {
@@ -135,7 +141,7 @@ private fun ConnectionInfoCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
@@ -145,7 +151,7 @@ private fun ConnectionInfoCard(
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
                 IconButton(onClick = { onCopy(payload.ipAddress) }) {
-                    Icon(Icons.Default.Copy, contentDescription = "Copy IP", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy IP", tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -153,9 +159,9 @@ private fun ConnectionInfoCard(
             InfoRow(label = "IP Address", value = payload.ipAddress, copyable = true, onCopy = { onCopy(payload.ipAddress) })
             InfoRow(label = "Port", value = payload.port.toString())
             InfoRow(label = "Session Token", value = payload.sessionToken.take(8) + "...", copyable = true, onCopy = { onCopy(payload.sessionToken) })
-            InfoRow(label = "Role", value = payload.role.capitalize())
+            InfoRow(label = "Role", value = payload.role.replaceFirstChar { it.uppercase() })
             if (payload.fileCount > 0) InfoRow(label = "Files", value = payload.fileCount.toString())
-            if (payload.totalSize > 0) InfoRow(label = "Total Size", value = android.text.format.Formatter.formatFileSize(android.content.Context, payload.totalSize))
+            if (payload.totalSize > 0) InfoRow(label = "Total Size", value = android.text.format.Formatter.formatFileSize(context, payload.totalSize))
         }
     }
 }
@@ -171,7 +177,7 @@ private fun InfoRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -179,7 +185,7 @@ private fun InfoRow(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
         )
-        Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
@@ -191,7 +197,7 @@ private fun InfoRow(
             )
             if (copyable && onCopy != null) {
                 IconButton(onClick = onCopy) {
-                    Icon(Icons.Default.Copy, contentDescription = "Copy $label", tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy $label", tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f), modifier = Modifier.size(18.dp))
                 }
             }
         }

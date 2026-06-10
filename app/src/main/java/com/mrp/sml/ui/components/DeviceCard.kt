@@ -30,8 +30,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mrp.sml.core.models.Device
 import com.mrp.sml.ui.theme.AvatarBg1
-import com.mrp.sml.ui.theme.OnPrimary
-import com.mrp.sml.ui.theme.Primary
 import com.mrp.sml.ui.theme.StateConnected
 
 @Composable
@@ -67,7 +65,7 @@ fun DeviceCard(
                 Icon(
                     imageVector = Icons.Default.Phone,
                     contentDescription = null,
-                    tint = Primary,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
             }

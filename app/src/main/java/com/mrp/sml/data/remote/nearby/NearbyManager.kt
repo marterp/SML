@@ -33,8 +33,13 @@ class NearbyManager @Inject constructor(
 ) {
     private val connectionsClient: ConnectionsClient by lazy { Nearby.getConnectionsClient(context) }
 
-    private val _discoveredEndpoints = MutableSharedFlow<String>(replay = 5)
-    val discoveredEndpoints: SharedFlow<String> = _discoveredEndpoints.asSharedFlow()
+    data class NearbyEndpoint(
+        val endpointId: String,
+        val endpointName: String
+    )
+
+    private val _discoveredEndpoints = MutableSharedFlow<NearbyEndpoint>(replay = 5)
+    val discoveredEndpoints: SharedFlow<NearbyEndpoint> = _discoveredEndpoints.asSharedFlow()
 
     private val _connectionResult = MutableStateFlow<Boolean?>(null)
     val connectionResult: StateFlow<Boolean?> = _connectionResult.asStateFlow()
@@ -42,7 +47,7 @@ class NearbyManager @Inject constructor(
     private val endpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String, info: DiscoveredEndpointInfo) {
             Timber.i("Nearby endpoint found: $endpointId (${info.endpointName})")
-            _discoveredEndpoints.tryEmit(endpointId)
+            _discoveredEndpoints.tryEmit(NearbyEndpoint(endpointId, info.endpointName))
         }
 
         override fun onEndpointLost(endpointId: String) {

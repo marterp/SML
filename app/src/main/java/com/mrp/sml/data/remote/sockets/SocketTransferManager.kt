@@ -34,8 +34,10 @@ class SocketTransferManager @Inject constructor() {
     private var sessionKey: ByteArray? = null
     private var cancelled = false
     private var paused = false
+    private var currentSessionToken: String = ""
 
     fun setSessionToken(token: String) {
+        currentSessionToken = token
         sessionKey = MessageDigest.getInstance("SHA-256").digest(token.toByteArray())
     }
 
@@ -55,10 +57,15 @@ class SocketTransferManager @Inject constructor() {
         _state.value = TransferState.TRANSFERRING
     }
 
+    fun getCurrentSessionToken(): String = currentSessionToken
+
+    fun getCurrentProgress(): TransferProgress = _progress.value
+
     fun reset() {
         cancelled = false
         paused = false
         sessionKey = null
+        currentSessionToken = ""
         _state.value = TransferState.IDLE
         _progress.value = TransferProgress()
     }
@@ -94,7 +101,6 @@ class SocketTransferManager @Inject constructor() {
                         kotlinx.coroutines.delay(500)
                     }
 
-                    fileInput.skip((chunkIndex - startChunk).toLong() * TransferConstants.CHUNK_SIZE)
                     val remaining = fileSize - (chunkIndex.toLong() * TransferConstants.CHUNK_SIZE)
                     val bytesToRead = minOf(TransferConstants.CHUNK_SIZE.toLong(), remaining).toInt()
                     var totalRead = 0
@@ -107,25 +113,40 @@ class SocketTransferManager @Inject constructor() {
                     val nonce = ByteArray(TransferConstants.AES_GCM_NONCE_LENGTH).also { secureRandom.nextBytes(it) }
                     val encrypted = encryptChunk(buffer.copyOf(totalRead), nonce)
 
-                    output.writeByte(TYPE_CHUNK.toInt())
-                    output.writeInt(fileIndex)
-                    output.writeInt(chunkIndex)
-                    output.writeInt(encrypted.size)
-                    output.writeBoolean(chunkIndex == totalChunks - 1)
-                    output.write(nonce)
-                    output.write(encrypted)
-                    output.flush()
+                    var sendSuccess = false
+                    for (retryAttempt in 1..TransferConstants.MAX_RETRY_ATTEMPTS) {
+                        try {
+                            output.writeByte(TYPE_CHUNK.toInt())
+                            output.writeInt(fileIndex)
+                            output.writeInt(chunkIndex)
+                            output.writeInt(encrypted.size)
+                            output.writeBoolean(chunkIndex == totalChunks - 1)
+                            output.write(nonce)
+                            output.write(encrypted)
+                            output.flush()
+                            sendSuccess = true
+                            break
+                        } catch (e: Exception) {
+                            if (retryAttempt < TransferConstants.MAX_RETRY_ATTEMPTS && !cancelled) {
+                                kotlinx.coroutines.delay(TransferConstants.RETRY_DELAY_MS)
+                            } else {
+                                throw e
+                            }
+                        }
+                    }
 
                     transferred += totalRead
                     val progressPercent = if (fileSize > 0) (transferred * 100f / fileSize) else 0f
                     val elapsed = System.currentTimeMillis() - startTime
                     val speed = if (elapsed > 0) transferred * 1000.0 / elapsed else 0.0
 
+                    val etaSeconds = if (speed > 0) ((fileSize - transferred) / speed).toLong() else 0L
                     _progress.value = TransferProgress(
                         transferredBytes = transferred,
                         totalBytes = fileSize,
                         speedBytesPerSecond = speed,
                         progressPercent = progressPercent,
+                        etaSeconds = etaSeconds,
                         currentFileName = file.name,
                         currentFileIndex = fileIndex,
                         totalFiles = totalFiles
@@ -179,30 +200,47 @@ class SocketTransferManager @Inject constructor() {
                         kotlinx.coroutines.delay(500)
                     }
 
-                    val chunkType = input.readByte()
-                    if (chunkType != TYPE_CHUNK) throw Exception("Expected CHUNK, got $chunkType")
+                    var chunkType: Byte = -1
+                    var receiveSuccess = false
+                    var decrypted = ByteArray(0)
+                    for (retryAttempt in 1..TransferConstants.MAX_RETRY_ATTEMPTS) {
+                        try {
+                            chunkType = input.readByte()
+                            if (chunkType != TYPE_CHUNK) throw Exception("Expected CHUNK, got $chunkType")
 
-                    input.readInt()
-                    input.readInt()
-                    val chunkSize = input.readInt()
-                    input.readBoolean()
+                            input.readInt()
+                            input.readInt()
+                            val chunkSize = input.readInt()
+                            input.readBoolean()
 
-                    val nonce = ByteArray(TransferConstants.AES_GCM_NONCE_LENGTH).also { input.readFully(it) }
-                    val encrypted = ByteArray(chunkSize).also { input.readFully(it) }
-                    val decrypted = decryptChunk(encrypted, nonce)
+                            val nonce = ByteArray(TransferConstants.AES_GCM_NONCE_LENGTH).also { input.readFully(it) }
+                            val encrypted = ByteArray(chunkSize).also { input.readFully(it) }
+                            decrypted = decryptChunk(encrypted, nonce)
 
-                    fileOutput.write(decrypted)
+                            fileOutput.write(decrypted)
+                            receiveSuccess = true
+                            break
+                        } catch (e: Exception) {
+                            if (retryAttempt < TransferConstants.MAX_RETRY_ATTEMPTS && !cancelled) {
+                                kotlinx.coroutines.delay(TransferConstants.RETRY_DELAY_MS)
+                            } else {
+                                throw e
+                            }
+                        }
+                    }
                     transferred += decrypted.size
 
                     val progressPercent = if (fileSize > 0) (transferred * 100f / fileSize) else 0f
                     val elapsed = System.currentTimeMillis() - startTime
                     val speed = if (elapsed > 0) transferred * 1000.0 / elapsed else 0.0
 
+                    val etaSeconds = if (speed > 0) ((fileSize - transferred) / speed).toLong() else 0L
                     _progress.value = TransferProgress(
                         transferredBytes = transferred,
                         totalBytes = fileSize,
                         speedBytesPerSecond = speed,
                         progressPercent = progressPercent,
+                        etaSeconds = etaSeconds,
                         currentFileName = fileName,
                         currentFileIndex = fileIndex,
                         totalFiles = totalFiles
@@ -246,21 +284,21 @@ class SocketTransferManager @Inject constructor() {
     }
 
     private fun encryptChunk(data: ByteArray, nonce: ByteArray): ByteArray {
-        val key = sessionKey ?: return data
+        val key = sessionKey ?: throw IllegalStateException("Session key not set — cannot encrypt")
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, nonce))
         return cipher.doFinal(data)
     }
 
     private fun decryptChunk(encrypted: ByteArray, nonce: ByteArray): ByteArray {
-        val key = sessionKey ?: return encrypted
+        val key = sessionKey ?: throw IllegalStateException("Session key not set — cannot decrypt")
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, nonce))
         return cipher.doFinal(encrypted)
     }
 
     private fun sanitizeFileName(name: String): String {
-        return name.replace("..", "").replace('/', '_').replace('\\', '_')
+        return name.replace("..", "").replace(Regex("[\\x00-\\x1f/\\\\]"), "_")
     }
 
     companion object {

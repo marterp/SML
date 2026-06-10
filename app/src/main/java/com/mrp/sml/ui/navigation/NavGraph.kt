@@ -76,11 +76,14 @@ fun NavGraph(
         composable(Screen.Splash.route) {
             SplashScreen(
                 onSplashComplete = {
+                    val cameraGranted = PermissionChecker.checkSelfPermission(context, Manifest.permission.CAMERA) == PermissionChecker.PERMISSION_GRANTED
                     val permissionsGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         PermissionChecker.checkSelfPermission(context, Manifest.permission.NEARBY_WIFI_DEVICES) == PermissionChecker.PERMISSION_GRANTED &&
-                        PermissionChecker.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PermissionChecker.PERMISSION_GRANTED
+                        PermissionChecker.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PermissionChecker.PERMISSION_GRANTED &&
+                        cameraGranted
                     } else {
-                        PermissionChecker.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED
+                        PermissionChecker.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PermissionChecker.PERMISSION_GRANTED &&
+                        cameraGranted
                     }
                     val dest = if (permissionsGranted) Screen.Home.route else Screen.Permissions.route
                     navController.navigate(dest) {
@@ -148,6 +151,11 @@ fun NavGraph(
                 onDeviceConnected = { sessionId ->
                     navController.navigate(Screen.Transfer.createRoute(sessionId))
                 },
+                onAcceptTransfer = { sessionId ->
+                    viewModel.acceptTransfer(sessionId)
+                    navController.navigate(Screen.Transfer.createRoute(sessionId, "receive"))
+                },
+                onRejectTransfer = { viewModel.rejectTransfer() },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -306,7 +314,11 @@ fun NavGraph(
                 onRetry = { viewModel.retryTransfer(sessionId) },
                 onBack = { navController.popBackStack() },
                 onBackToHome = { navController.popBackStack(Screen.Home.route, false) },
-                onViewDetails = { navController.navigate(Screen.TransferDetail.createRoute(sessionId)) }
+                onViewDetails = { navController.navigate(Screen.TransferDetail.createRoute(sessionId)) },
+                onSendMore = { navController.navigate(Screen.Send.route) { popUpTo(Screen.Home.route) } },
+                onViewFiles = {
+                    navController.navigate(Screen.History.route) { popUpTo(Screen.Home.route) }
+                }
             )
         }
 
@@ -336,8 +348,19 @@ fun NavGraph(
             HistoryScreen(
                 uiState = uiState,
                 onFilterChange = { viewModel.setFilter(it) },
+                onSearchQueryChange = { viewModel.setSearchQuery(it) },
                 onClearHistory = { viewModel.clearHistory() },
-                onRetryTransfer = { viewModel.retryTransfer(it) },
+                onRetryTransfer = { transferId ->
+                    val transfer = uiState.allTransfers.find { it.id == transferId }
+                    if (transfer != null) {
+                        when (transfer.direction) {
+                            com.mrp.sml.domain.model.TransferModel.TransferDirection.SENT ->
+                                navController.navigate(Screen.Send.route)
+                            com.mrp.sml.domain.model.TransferModel.TransferDirection.RECEIVED ->
+                                navController.navigate(Screen.Receive.route)
+                        }
+                    }
+                },
                 onOpenFile = { transferId ->
                     navController.navigate(Screen.TransferDetail.createRoute(transferId))
                 },
@@ -359,11 +382,17 @@ fun NavGraph(
         composable(Screen.Settings.route) {
             val viewModel: SettingsViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val settingsLauncher = remember {
+                androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
+            }
 
             SettingsScreen(
                 uiState = uiState,
                 onDeviceNameChange = { viewModel.setDeviceName(it) },
                 onSaveHistoryChange = { viewModel.setSaveHistory(it) },
+                onDarkModeChange = { viewModel.setDarkMode(it) },
+                onChunkSizeChange = { viewModel.setChunkSize(it) },
+                onNetworkFallbackChange = { viewModel.setNetworkFallback(it) },
                 onOpenPermissions = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                         data = Uri.fromParts("package", context.packageName, null)
@@ -374,7 +403,9 @@ fun NavGraph(
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                     }
-                    context.startActivity(intent)
+                    try {
+                        context.startActivity(intent)
+                    } catch (_: Exception) {}
                 },
                 onBack = { navController.popBackStack() }
             )

@@ -14,13 +14,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -48,8 +46,6 @@ import com.mrp.sml.core.models.ConnectionState
 import com.mrp.sml.core.models.Device
 import com.mrp.sml.ui.components.DeviceCard
 import com.mrp.sml.ui.components.SMLTopBar
-import com.mrp.sml.ui.theme.Error
-import com.mrp.sml.ui.theme.Primary
 import com.mrp.sml.ui.viewmodel.PairingMode
 import com.mrp.sml.ui.viewmodel.PairingUiState
 
@@ -114,36 +110,21 @@ fun DiscoveryScreen(
                         enabled = !uiState.isDiscovering
                     ) {
                         Icon(
-                            if (uiState.isDiscovering) Icons.Default.Refresh else Icons.Default.Search,
-                            contentDescription = if (uiState.isDiscovering) "Searching" else "Discover devices"
+                            if (uiState.isDiscovering) Icons.Default.Close else Icons.AutoMirrored.Filled.Send,
+                            contentDescription = if (uiState.isDiscovering) "Cancel" else "Send files"
                         )
                         Spacer(modifier = Modifier.size(8.dp))
-                        Text(if (uiState.isDiscovering) "Searching..." else "Discover Devices")
+                        Text(if (uiState.isDiscovering) "Searching..." else "Send Files")
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
+                OutlinedButton(
+                    onClick = onScanQr,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = onShowQrCode,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.Default.QrCode, contentDescription = "Show my QR code")
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("My QR")
-                    }
-                    OutlinedButton(
-                        onClick = onScanQr,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR code")
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Scan QR")
-                    }
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR code")
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text("Scan QR")
                 }
             } else {
                 Button(
@@ -153,8 +134,8 @@ fun DiscoveryScreen(
                     enabled = !uiState.isDiscovering
                 ) {
                     Icon(
-                        if (uiState.isDiscovering) Icons.Default.Refresh else Icons.Default.Search,
-                        contentDescription = if (uiState.isDiscovering) "Searching" else "Discover devices"
+                        if (uiState.isDiscovering) Icons.Default.Close else Icons.Default.Wifi,
+                        contentDescription = if (uiState.isDiscovering) "Cancel" else "Discover devices"
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(if (uiState.isDiscovering) "Searching..." else "Discover Devices")
@@ -337,7 +318,7 @@ private fun WaitingForAcceptState(
         Icon(
             imageVector = Icons.Default.HourglassEmpty,
             contentDescription = null,
-            tint = Primary,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(80.dp)
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -353,7 +334,7 @@ private fun WaitingForAcceptState(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Default.Person, contentDescription = "Connected to $deviceName", modifier = Modifier.size(18.dp), tint = Primary)
+                Icon(Icons.Default.Person, contentDescription = "Connected to $deviceName", modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "Connected to $deviceName",
@@ -386,7 +367,7 @@ private fun WaitingForAcceptState(
             onClick = onCancel,
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Error)
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
         ) {
             Icon(Icons.Default.Close, contentDescription = "Cancel")
             Spacer(modifier = Modifier.width(6.dp))

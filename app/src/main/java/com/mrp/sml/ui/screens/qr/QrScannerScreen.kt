@@ -50,8 +50,8 @@ import java.util.concurrent.Executors
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalGetImage::class)
 @Composable
 fun QrScannerScreen(
-    onQrScanned: (String) -> Unit,
-    onBack: () -> Unit
+    onQrScanned: (String) -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -100,6 +100,7 @@ fun QrScannerScreen(
                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                 .build()
                                 .also { analysis ->
+                                    @Suppress("UnsafeOptInUsageError")
                                     analysis.setAnalyzer(executor) { imageProxy ->
                                         decodeQrCode(imageProxy, reader)?.let { result ->
                                             onQrScanned(result.text)

@@ -70,7 +70,7 @@ class ReceiveViewModel @Inject constructor(
 
     fun startListening() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isScanning = true, errorMessage = null) }
+            _uiState.update { it.copy(isScanning = true, errorMessage = null, qrPayload = null, qrBitmap = null) }
             connectionRepository.startDiscovery()
             generateReceiverQrCode(useHotspot = false)
         }
@@ -78,7 +78,7 @@ class ReceiveViewModel @Inject constructor(
 
     fun startHotspotAndListen() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isScanning = true, errorMessage = null, usingHotspot = true) }
+            _uiState.update { it.copy(isScanning = true, errorMessage = null, usingHotspot = true, qrPayload = null, qrBitmap = null) }
 
             val result = hotspotManager.startHotspot()
             result.onSuccess { info ->
@@ -102,9 +102,18 @@ class ReceiveViewModel @Inject constructor(
 
     fun stopListening() {
         viewModelScope.launch {
+            transferRepository.cancelTransfer()
             connectionRepository.stopDiscovery()
             hotspotManager.stopHotspot()
-            _uiState.update { it.copy(isScanning = false, usingHotspot = false) }
+            _uiState.update {
+                it.copy(
+                    isScanning = false,
+                    usingHotspot = false,
+                    qrPayload = null,
+                    qrBitmap = null,
+                    errorMessage = null
+                )
+            }
         }
     }
 
@@ -152,6 +161,7 @@ class ReceiveViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        transferRepository.cancelTransfer()
         viewModelScope.launch {
             connectionRepository.stopDiscovery()
             hotspotManager.stopHotspot()

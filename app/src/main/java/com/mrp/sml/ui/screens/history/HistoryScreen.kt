@@ -16,9 +16,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -28,6 +30,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,8 +42,6 @@ import androidx.compose.ui.unit.dp
 import com.mrp.sml.core.utils.FileUtils
 import com.mrp.sml.domain.model.TransferModel
 import com.mrp.sml.ui.components.SMLTopBar
-import com.mrp.sml.ui.theme.Error
-import com.mrp.sml.ui.theme.Primary
 import com.mrp.sml.ui.theme.StatusCompleted
 import com.mrp.sml.ui.theme.StatusFailed
 import com.mrp.sml.ui.theme.StatusReceived
@@ -59,6 +60,7 @@ enum class HistoryFilter {
 fun HistoryScreen(
     uiState: HistoryUiState = HistoryUiState(),
     onFilterChange: (HistoryFilter) -> Unit = {},
+    onSearchQueryChange: (String) -> Unit = {},
     onClearHistory: () -> Unit = {},
     onRetryTransfer: (String) -> Unit = {},
     onOpenFile: (String) -> Unit = {},
@@ -82,13 +84,34 @@ fun HistoryScreen(
                 }
             )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            if (uiState.filteredTransfers.isEmpty()) {
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Search transfers...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    },
+                    trailingIcon = {
+                        if (uiState.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                if (uiState.filteredTransfers.isEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -96,17 +119,31 @@ fun HistoryScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "No transfers yet",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Your transfer history will appear here",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (uiState.searchQuery.isNotBlank()) {
+                        Text(
+                            text = "No results found",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "No transfers match \"${uiState.searchQuery}\"",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            text = "No transfers yet",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Your transfer history will appear here",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
                 FilterRow(
@@ -150,7 +187,7 @@ private fun FilterRow(
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Primary.copy(alpha = 0.15f)
+                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                 )
             )
         }
@@ -259,7 +296,7 @@ private fun HistoryItem(
                 imageVector = if (transfer.direction == TransferModel.TransferDirection.SENT)
                     Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                 contentDescription = directionLabel,
-                tint = if (transfer.direction == TransferModel.TransferDirection.SENT) Primary else StatusReceived,
+                tint = if (transfer.direction == TransferModel.TransferDirection.SENT) MaterialTheme.colorScheme.primary else StatusReceived,
                 modifier = Modifier.size(24.dp)
             )
 
@@ -350,7 +387,7 @@ private fun HistoryItem(
                         Icon(
                             Icons.Default.Refresh,
                             contentDescription = "Retry transfer",
-                            tint = Error,
+                            tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -364,7 +401,7 @@ private fun HistoryItem(
                             Icon(
                                 Icons.Default.FolderOpen,
                                 contentDescription = "Open received file",
-                                tint = Primary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }

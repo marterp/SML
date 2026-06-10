@@ -16,6 +16,7 @@ import javax.inject.Inject
 data class HistoryUiState(
     val allTransfers: List<TransferModel> = emptyList(),
     val filter: HistoryFilter = HistoryFilter.ALL,
+    val searchQuery: String = "",
     val filteredTransfers: List<TransferModel> = emptyList()
 )
 
@@ -33,7 +34,7 @@ class HistoryViewModel @Inject constructor(
                 _uiState.update { state ->
                     state.copy(
                         allTransfers = transfers,
-                        filteredTransfers = applyFilter(transfers, state.filter)
+                        filteredTransfers = applyFilter(transfers, state.filter, state.searchQuery)
                     )
                 }
             }
@@ -44,7 +45,16 @@ class HistoryViewModel @Inject constructor(
         _uiState.update { state ->
             state.copy(
                 filter = filter,
-                filteredTransfers = applyFilter(state.allTransfers, filter)
+                filteredTransfers = applyFilter(state.allTransfers, filter, state.searchQuery)
+            )
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.update { state ->
+            state.copy(
+                searchQuery = query,
+                filteredTransfers = applyFilter(state.allTransfers, state.filter, query)
             )
         }
     }
@@ -61,12 +71,14 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    private fun applyFilter(transfers: List<TransferModel>, filter: HistoryFilter): List<TransferModel> {
-        return when (filter) {
+    private fun applyFilter(transfers: List<TransferModel>, filter: HistoryFilter, searchQuery: String): List<TransferModel> {
+        val filtered = when (filter) {
             HistoryFilter.ALL -> transfers
             HistoryFilter.SENT -> transfers.filter { it.direction == TransferModel.TransferDirection.SENT }
             HistoryFilter.RECEIVED -> transfers.filter { it.direction == TransferModel.TransferDirection.RECEIVED }
             HistoryFilter.FAILED -> transfers.filter { it.status == TransferModel.TransferStatus.FAILED || it.status == TransferModel.TransferStatus.CANCELLED }
         }
+        return if (searchQuery.isBlank()) filtered
+        else filtered.filter { it.fileName.contains(searchQuery, ignoreCase = true) }
     }
 }

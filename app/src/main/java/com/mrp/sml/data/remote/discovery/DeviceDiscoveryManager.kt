@@ -63,6 +63,27 @@ class DeviceDiscoveryManager @Inject constructor(
                 }
             }
         }
+
+        scope.launch {
+            nearbyManager.discoveredEndpoints.collect { endpoint ->
+                val current = _discoveredDevices.value.toMutableList()
+                if (current.none { it.id == endpoint.endpointId }) {
+                    current.add(
+                        Device(
+                            id = endpoint.endpointId,
+                            name = endpoint.endpointName,
+                            ipAddress = "",
+                            deviceType = com.mrp.sml.core.models.DeviceType.UNKNOWN
+                        )
+                    )
+                    _discoveredDevices.value = current
+                }
+            }
+        }
+    }
+
+    override fun toString(): String {
+        return "Device Discovery Manager"
     }
 
     suspend fun stopDiscovery() {

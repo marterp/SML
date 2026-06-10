@@ -15,7 +15,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.File
@@ -157,6 +156,21 @@ class TransferRepositoryImpl @Inject constructor(
 
     override fun pauseTransfer() {
         socketTransferManager.pause()
+        val token = socketTransferManager.getCurrentSessionToken()
+        if (token.isNotBlank()) {
+            val progress = socketTransferManager.getCurrentProgress()
+            scope.launch {
+                transferProgressDao.upsert(
+                    TransferProgressEntity(
+                        transferId = token,
+                        lastChunkIndex = 0L,
+                        lastFileIndex = progress.currentFileIndex,
+                        transferredBytes = progress.transferredBytes,
+                        totalBytes = progress.totalBytes
+                    )
+                )
+            }
+        }
     }
 
     override fun resumeTransfer() {
@@ -164,6 +178,7 @@ class TransferRepositoryImpl @Inject constructor(
             val sessionToken = transferProgressDao.getLastPausedTransferId() ?: return@launch
             socketTransferManager.resume()
             transferDao.updateStatus(sessionToken, TransferModel.TransferStatus.TRANSFERRING.name)
+            transferProgressDao.delete(sessionToken)
         }
     }
 
@@ -173,6 +188,10 @@ class TransferRepositoryImpl @Inject constructor(
             transferDao.updateStatus(
                 id = transfer.id,
                 status = TransferModel.TransferStatus.PENDING.name
+            )
+            com.mrp.sml.workers.RetryTransferWorker.scheduleRetry(
+                com.mrp.sml.SMLApplication.instance,
+                sessionId
             )
         }
     }

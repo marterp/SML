@@ -15,9 +15,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiTethering
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -32,6 +34,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -43,6 +49,7 @@ import com.mrp.sml.core.models.Device
 import com.mrp.sml.ui.components.DeviceCard
 import com.mrp.sml.ui.components.SMLTopBar
 import com.mrp.sml.ui.theme.Primary
+import com.mrp.sml.ui.viewmodel.IncomingTransferRequest
 import com.mrp.sml.ui.viewmodel.ReceiveUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,10 +61,93 @@ fun ReceiveScreen(
     onStopListening: () -> Unit = {},
     onDeviceClick: (Device) -> Unit = {},
     onDeviceConnected: (String) -> Unit = {},
+    onAcceptTransfer: (String) -> Unit = {},
+    onRejectTransfer: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
+    var showExitDialog by remember { mutableStateOf(false) }
+    var showStopListeningDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
         onStartListening()
+    }
+
+    if (showStopListeningDialog) {
+        AlertDialog(
+            onDismissRequest = { showStopListeningDialog = false },
+            title = { Text("Stop Receiving?") },
+            text = {
+                Text("Stopping will close the receiving section and return to the main screen.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showStopListeningDialog = false
+                    onStopListening()
+                    onBack()
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showStopListeningDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Stop Receiving?") },
+            text = {
+                Text("Leaving this screen will stop listening for incoming files and cancel any active transfers.")
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showExitDialog = false
+                    onStopListening()
+                    onBack()
+                }) {
+                    Text("Stop & Leave")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showExitDialog = false }) {
+                    Text("Stay")
+                }
+            }
+        )
+    }
+
+    uiState.incomingRequest?.let { request ->
+        AlertDialog(
+            onDismissRequest = onRejectTransfer,
+            title = { Text("Incoming Transfer") },
+            text = {
+                Column {
+                    Text("${request.deviceName} wants to send files:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    request.files.forEach { file ->
+                        Text("• ${file.name}", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { onAcceptTransfer(request.sessionId) }) {
+                    Icon(Icons.Default.Check, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Accept")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = onRejectTransfer) {
+                    Icon(Icons.Default.Close, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Reject")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -65,7 +155,7 @@ fun ReceiveScreen(
             SMLTopBar(
                 title = "Receive Files",
                 showBackButton = true,
-                onBackClick = onBack
+                onBackClick = { showExitDialog = true }
             )
         }
     ) { padding ->
@@ -139,7 +229,7 @@ fun ReceiveScreen(
                 connectionState = uiState.connectionState,
                 discoveredDevices = uiState.discoveredDevices,
                 onDeviceClick = onDeviceClick,
-                onStop = onStopListening,
+                onStop = { showStopListeningDialog = true },
                 onStartHotspot = onStartHotspot,
                 isUsingHotspot = uiState.usingHotspot,
                 errorMessage = uiState.errorMessage

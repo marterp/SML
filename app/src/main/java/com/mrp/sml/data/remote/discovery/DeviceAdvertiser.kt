@@ -1,5 +1,6 @@
 package com.mrp.sml.data.remote.discovery
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.wifi.p2p.WifiP2pManager
 import com.mrp.sml.core.constants.NetworkConstants
@@ -19,6 +20,7 @@ class DeviceAdvertiser @Inject constructor(
         wifiP2pManager?.initialize(context, context.mainLooper, null)
     }
 
+    @SuppressLint("MissingPermission")
     fun createGroup(): Result<Unit> {
         return try {
             channel?.let { ch ->
